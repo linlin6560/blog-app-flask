@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}AI 助手{% endblock %}
+
+{% block styles %}
+<link href="{{ url_for('static', filename='css/chat.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="message-avatar">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div>
+            <h1 class="chat-header-title">AI 助手</h1>
+            <p class="chat-header-subtitle">随时为您提供智能帮助</p>
+        </div>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+        <!-- AI欢迎消息 -->
+        <div class="message ai">
+            <div class="message-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+                你好！我是你的AI助手，有什么我可以帮你的吗？
+            </div>
+        </div>
+
+        <!-- 用户消息示例 -->
+        <div class="message user">
+            <div class="message-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="message-content">
+                你好！请问你能做什么？
+            </div>
+        </div>
+
+        <!-- AI回复示例 -->
+        <div class="message ai">
+            <div class="message-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+                我可以：
+                <br>• 回答各种问题
+                <br>• 提供编程帮助
+                <br>• 协助写作和创作
+                <br>• 进行文本分析
+                <br>• 提供建议和推荐
+                <br>
+                <br>请随时告诉我你需要什么帮助！
+            </div>
+        </div>
+
+        <!-- 打字指示器 -->
+        <div class="typing-indicator" style="display: none;">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+    </div>
+
+    <div class="chat-input-container">
+        <div class="chat-input-wrapper">
+            <textarea class="chat-input" 
+                      id="chat-input"
+                      placeholder="输入你的问题..."
+                      rows="1"
+                      onInput="this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'"></textarea>
+            <button class="send-button" onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 获取CSRF token
+const csrfToken = "{{ csrf_token() }}";
+
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    if (!message) return;
+
+    // 添加用户消息
+    appendMessage('user', message);
+    input.value = '';
+    input.style.height = 'auto';
+
+    // 显示打字指示器
+    const typingIndicator = document.querySelector('.typing-indicator');
+    typingIndicator.style.display = 'flex';
+
+    try {
+        // 调用API获取回复
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ message: message })
+        });
+
+        const data = await response.json();
+        typingIndicator.style.display = 'none';
+
+        if (!response.ok) {
+            console.error('服务器错误:', data);
+            throw new Error(data.error || '服务器响应错误');
+        }
+
+        if (!data.response) {
+            throw new Error('服务器返回的数据格式错误');
+        }
+
+        appendMessage('ai', data.response);
+    } catch (error) {
+        console.error('Error:', error);
+        typingIndicator.style.display = 'none';
+        appendMessage('ai', `抱歉，发生了错误：${error.message}`);
+    }
+}
+
+function appendMessage(type, content) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}`;
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar';
+    const icon = document.createElement('i');
+    icon.className = type === 'user' ? 'fas fa-user' : 'fas fa-robot';
+    avatar.appendChild(icon);
+
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    messageContent.textContent = content;
+
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(messageContent);
+    
+    // 在打字指示器之前插入消息
+    const typingIndicator = document.querySelector('.typing-indicator');
+    messagesContainer.insertBefore(messageDiv, typingIndicator);
+    
+    // 滚动到底部
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// 监听回车键发送消息
+document.getElementById('chat-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+// 自动聚焦输入框
+window.onload = function() {
+    document.getElementById('chat-input').focus();
+};
+</script>
+{% endblock %} 
