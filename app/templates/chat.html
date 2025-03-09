@@ -29,33 +29,6 @@
             </div>
         </div>
 
-        <!-- 用户消息示例 -->
-        <div class="message user">
-            <div class="message-avatar">
-                <i class="fas fa-user"></i>
-            </div>
-            <div class="message-content">
-                你好！请问你能做什么？
-            </div>
-        </div>
-
-        <!-- AI回复示例 -->
-        <div class="message ai">
-            <div class="message-avatar">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div class="message-content">
-                我可以：
-                <br>• 回答各种问题
-                <br>• 提供编程帮助
-                <br>• 协助写作和创作
-                <br>• 进行文本分析
-                <br>• 提供建议和推荐
-                <br>
-                <br>请随时告诉我你需要什么帮助！
-            </div>
-        </div>
-
         <!-- 打字指示器 -->
         <div class="typing-indicator" style="display: none;">
             <div class="typing-dot"></div>
@@ -71,7 +44,7 @@
                       placeholder="输入你的问题..."
                       rows="1"
                       onInput="this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'"></textarea>
-            <button class="send-button" onclick="sendMessage()">
+            <button class="send-button" id="send-button">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
@@ -84,88 +57,196 @@
 // 获取CSRF token
 const csrfToken = "{{ csrf_token() }}";
 
-async function sendMessage() {
-    const input = document.getElementById('chat-input');
-    const message = input.value.trim();
-    if (!message) return;
-
-    // 添加用户消息
-    appendMessage('user', message);
-    input.value = '';
-    input.style.height = 'auto';
-
-    // 显示打字指示器
-    const typingIndicator = document.querySelector('.typing-indicator');
-    typingIndicator.style.display = 'flex';
-
-    try {
-        // 调用API获取回复
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({ message: message })
-        });
-
-        const data = await response.json();
-        typingIndicator.style.display = 'none';
-
-        if (!response.ok) {
-            console.error('服务器错误:', data);
-            throw new Error(data.error || '服务器响应错误');
+document.addEventListener('DOMContentLoaded', function() {
+    const chatInput = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-button');
+    const chatMessages = document.getElementById('chat-messages');
+    // 发送消息函数 - 流式响应版本
+    async function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+    
+        // 添加用户消息
+        appendMessage('user', message);
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+    
+        // 显示打字指示器
+        const typingIndicator = document.querySelector('.typing-indicator');
+        typingIndicator.style.display = 'flex';
+    
+        try {
+            // 创建AI消息元素，但内容为空
+            const aiMessageContent = appendMessageWithEmptyContent('ai');
+            
+            // 先显示思考中的状态
+            aiMessageContent.innerHTML = '<div class="thinking-status">思考中...</div>';
+            
+            // 创建EventSource连接 - 使用GET请求参数
+            const eventSource = new EventSource(`/stream_chat?message=${encodeURIComponent(message)}`);
+            
+            // 隐藏打字指示器
+            typingIndicator.style.display = 'none';
+            
+            // 准备接收回答
+            let fullResponse = '';
+            let thinkingResponse = '';
+            let finalResponse = '';
+            let isThinking = true;
+            
+            // 处理消息事件
+            eventSource.onmessage = function(event) {
+                if (event.data === "[DONE]") {
+                    eventSource.close();
+                    
+                    // 如果没有最终回答，则将思考过程作为最终回答
+                    if (!finalResponse && thinkingResponse) {
+                        finalResponse = thinkingResponse;
+                    }
+                    
+                    // 替换为思考过程和最终回答两部分
+                    aiMessageContent.innerHTML = `
+                        <div class="thinking-status">【深度思考】</div>
+                        <div class="partial-response">${thinkingResponse}</div>
+                        <div class="answer-title">【最终回答】</div>
+                        <div class="final-answer">${finalResponse}</div>
+                    `;
+                    scrollToBottom();
+                    return;
+                }
+                
+                try {
+                    const chunk = event.data;
+                    
+                    // 检测是否包含分隔符，表示从思考转为最终回答
+                    if (chunk.includes("【最终回答】")) {
+                        isThinking = false;
+                        const parts = chunk.split("【最终回答】");
+                        if (parts[0]) thinkingResponse += parts[0];
+                        if (parts[1]) finalResponse = parts[1];
+                    } else if (isThinking) {
+                        thinkingResponse += chunk;
+                    } else {
+                        finalResponse += chunk;
+                    }
+                    
+                    fullResponse += chunk;
+                    
+                    // 更新显示
+                    if (aiMessageContent.querySelector('.thinking-status')) {
+                        if (isThinking) {
+                            aiMessageContent.innerHTML = `
+                                <div class="thinking-status">【深度思考】</div>
+                                <div class="partial-response">${thinkingResponse}</div>
+                            `;
+                        } else {
+                            aiMessageContent.innerHTML = `
+                                <div class="thinking-status">【深度思考】</div>
+                                <div class="partial-response">${thinkingResponse}</div>
+                                <div class="answer-title">【最终回答】</div>
+                                <div class="final-answer">${finalResponse}</div>
+                            `;
+                        }
+                    }
+                    
+                    scrollToBottom();
+                } catch (e) {
+                    console.error("解析消息时出错:", e);
+                }
+            };
+            
+            // 处理错误
+            eventSource.onerror = function(event) {
+                console.error("EventSource错误:", event);
+                eventSource.close();
+                if (aiMessageContent.innerHTML.includes('思考中')) {
+                    aiMessageContent.innerHTML = "抱歉，获取回复时出错。";
+                }
+                scrollToBottom();
+            };
+            
+        } catch (error) {
+            console.error('Error:', error);
+            const typingIndicator = document.querySelector('.typing-indicator');
+            typingIndicator.style.display = 'none';
+            appendMessage('ai', `抱歉，发生了错误：${error.message}`);
         }
-
-        if (!data.response) {
-            throw new Error('服务器返回的数据格式错误');
-        }
-
-        appendMessage('ai', data.response);
-    } catch (error) {
-        console.error('Error:', error);
-        typingIndicator.style.display = 'none';
-        appendMessage('ai', `抱歉，发生了错误：${error.message}`);
     }
-}
-
-function appendMessage(type, content) {
-    const messagesContainer = document.getElementById('chat-messages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${type}`;
+    // 添加消息到聊天界面
+    function appendMessage(type, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        const icon = document.createElement('i');
+        icon.className = type === 'user' ? 'fas fa-user' : 'fas fa-robot';
+        avatar.appendChild(icon);
     
-    const avatar = document.createElement('div');
-    avatar.className = 'message-avatar';
-    const icon = document.createElement('i');
-    icon.className = type === 'user' ? 'fas fa-user' : 'fas fa-robot';
-    avatar.appendChild(icon);
-
-    const messageContent = document.createElement('div');
-    messageContent.className = 'message-content';
-    messageContent.textContent = content;
-
-    messageDiv.appendChild(avatar);
-    messageDiv.appendChild(messageContent);
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        messageContent.innerHTML = content;
     
-    // 在打字指示器之前插入消息
-    const typingIndicator = document.querySelector('.typing-indicator');
-    messagesContainer.insertBefore(messageDiv, typingIndicator);
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(messageContent);
+        
+        // 在打字指示器之前插入消息
+        const typingIndicator = document.querySelector('.typing-indicator');
+        chatMessages.insertBefore(messageDiv, typingIndicator);
+        
+        // 滚动到底部
+        scrollToBottom();
+        
+        return messageContent;
+    }
+    
+    // 添加消息但内容为空，返回内容元素以便后续填充
+    function appendMessageWithEmptyContent(type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        const icon = document.createElement('i');
+        icon.className = type === 'user' ? 'fas fa-user' : 'fas fa-robot';
+        avatar.appendChild(icon);
+    
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+    
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(messageContent);
+        
+        // 在打字指示器之前插入消息
+        const typingIndicator = document.querySelector('.typing-indicator');
+        chatMessages.insertBefore(messageDiv, typingIndicator);
+        
+        // 滚动到底部
+        scrollToBottom();
+        
+        return messageContent;
+    }
     
     // 滚动到底部
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-// 监听回车键发送消息
-document.getElementById('chat-input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-});
 
-// 自动聚焦输入框
-window.onload = function() {
-    document.getElementById('chat-input').focus();
-};
+    // 监听回车键发送消息
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // 点击发送按钮
+    sendButton.addEventListener('click', sendMessage);
+
+    // 自动聚焦输入框
+    window.onload = function() {
+        chatInput.focus();
+    };
+});
 </script>
-{% endblock %} 
+{% endblock %}

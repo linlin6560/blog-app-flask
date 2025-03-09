@@ -6,6 +6,7 @@ from app.main import main
 from app.models.post import Post, Category  # Added Category import here
 from app.main.forms import PostForm
 from app.services.ai_service import AIService
+from flask import Response, stream_with_context
 
 @main.route('/')
 def index():
@@ -103,49 +104,27 @@ def handle_csrf_error(e):
     return jsonify({'error': 'CSRF验证失败'}), 400
 
 @main.route('/api/chat', methods=['POST'])
+@main.route('/chat_api', methods=['POST'])
 def chat_api():
     try:
-        # 记录请求头信息
-        current_app.logger.info(f"请求头: {dict(request.headers)}")
+        data = request.get_json()
+        current_app.logger.info(f"解析后的JSON数据: {data}")
         
-        # 记录原始请求数据
-        current_app.logger.info(f"原始请求数据: {request.data}")
-        
-        # 尝试解析JSON
-        try:
-            data = request.get_json()
-            current_app.logger.info(f"解析后的JSON数据: {data}")
-        except Exception as e:
-            current_app.logger.error(f"JSON解析错误: {str(e)}")
-            return jsonify({'error': 'JSON格式错误'}), 400
-        
-        if not data:
-            current_app.logger.error("请求数据为空")
+        if not data or 'message' not in data:
             return jsonify({'error': '无效的请求数据'}), 400
             
-        if not isinstance(data, dict):
-            current_app.logger.error(f"请求数据不是字典类型: {type(data)}")
-            return jsonify({'error': '无效的数据格式'}), 400
-            
-        if 'message' not in data:
-            current_app.logger.error(f"请求数据中缺少message字段，现有字段: {data.keys()}")
-            return jsonify({'error': '请求数据中缺少message字段'}), 400
-            
-        if not isinstance(data['message'], str):
-            current_app.logger.error(f"message字段不是字符串类型: {type(data['message'])}")
-            return jsonify({'error': 'message必须是字符串'}), 400
-
+        message = data['message']
+        
         messages = [
             {"role": "system", "content": "你是一个友好、专业的AI助手，可以帮助用户解答各种问题。"},
-            {"role": "user", "content": data['message']}
+            {"role": "user", "content": message}
         ]
 
         current_app.logger.info(f"发送到AI服务的消息: {messages}")
         
+        # 不使用流式响应，改为普通响应
         ai_service = AIService()
         response = ai_service.get_chat_response(messages)
-        
-        current_app.logger.info(f"AI服务返回的响应: {response}")
         
         return jsonify({'response': response})
         
@@ -154,6 +133,40 @@ def chat_api():
         current_app.logger.error(f"处理请求时发生错误: {str(e)}")
         current_app.logger.error(f"错误堆栈: {traceback.format_exc()}")
         return jsonify({'error': '服务器内部错误'}), 500
+
+@main.route('/stream_chat')
+def stream_chat():
+    message = request.args.get('message', '')
+    if not message:
+        return "数据不能为空", 400
+    
+    # 创建应用上下文
+    from app import create_app
+    app = create_app()
+    
+    def generate():
+        with app.app_context():
+            messages = [
+                {"role": "system", "content": "你是一个友好、专业的AI助手，可以帮助用户解答各种问题。"},
+                {"role": "user", "content": message}
+            ]
+            
+            ai_service = AIService()
+            
+            yield "data: 正在思考...\n\n"
+            
+            try:
+                for chunk in ai_service.get_chat_response_stream(messages):
+                    if chunk:
+                        yield f"data: {chunk}\n\n"
+                
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                current_app.logger.error(f"生成响应时出错: {str(e)}")
+                yield f"data: 抱歉，生成回复时出错: {str(e)}\n\n"
+                yield "data: [DONE]\n\n"
+    
+    return Response(generate(), mimetype='text/event-stream')
 # 添加删除文章的路由
 @main.route('/post/<int:post_id>/delete')
 @login_required

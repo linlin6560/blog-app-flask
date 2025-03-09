@@ -172,6 +172,65 @@
     border-radius: 50%;
     animation: typing 1.4s infinite;
 }
+/* 思考状态样式 */
+.thinking-status {
+    color: #888;
+    font-style: italic;
+    margin-bottom: 8px;
+    font-weight: 500;
+    border-left: 3px solid #ccc;
+    padding-left: 10px;
+}
+
+/* 部分响应样式 - 思考过程 */
+.partial-response {
+    color: #999;
+    font-size: 0.95em;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 5px;
+    border-left: 3px solid #ddd;
+}
+/* 最终回答标题样式 */
+.answer-title {
+    font-weight: bold;
+    color: #1e88e5;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 4px;
+    font-size: 1.05em;
+}
+
+/* 最终回答内容样式 */
+.final-answer {
+    color: #333;
+    font-weight: 500;
+    line-height: 1.6;
+    background-color: #f5f5f5;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #1e88e5;
+}
+
+/* 调整消息内容样式 */
+.message-content {
+    padding: 12px 16px;
+    border-radius: 8px;
+    max-width: 80%;
+    word-break: break-word;
+}
+
+.message.ai .message-content {
+    background-color: #f5f5f5;
+    border: 1px solid #e0e0e0;
+}
+
+.message.user .message-content {
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+    color: #0d47a1;
+}
 
 .typing-dot:nth-child(2) { animation-delay: 0.2s; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
@@ -179,4 +238,4 @@
 @keyframes typing {
     0%, 60%, 100% { transform: translateY(0); }
     30% { transform: translateY(-4px); }
-} 
+}
