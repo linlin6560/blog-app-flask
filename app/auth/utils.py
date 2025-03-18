@@ -3,27 +3,20 @@ import secrets
 from PIL import Image
 from flask import current_app
 
-def save_avatar(file, size=(150, 150)):
-    """保存用户头像并返回文件名"""
-    if not file:
-        return None
-        
-    # 创建随机文件名，避免文件名冲突
+def save_avatar(avatar_pic):
+    """保存用户头像"""
     random_hex = secrets.token_hex(8)
-    _, file_ext = os.path.splitext(file.filename)
-    file_name = random_hex + file_ext
+    _, f_ext = os.path.splitext(avatar_pic.filename)
+    picture_fn = random_hex + f_ext
+    picture_path = os.path.join(current_app.root_path, 'static/avatars', picture_fn)
     
-    # 确保目标文件夹存在
-    upload_folder = os.path.join(current_app.root_path, 'static', 'avatars')
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder)
+    # 确保目录存在
+    os.makedirs(os.path.dirname(picture_path), exist_ok=True)
     
-    file_path = os.path.join(upload_folder, file_name)
+    # 调整图像大小
+    output_size = (150, 150)
+    i = Image.open(avatar_pic)
+    i.thumbnail(output_size)
+    i.save(picture_path)
     
-    # 使用Pillow调整图片大小并保存
-    i = Image.open(file)
-    i.thumbnail(size)
-    i.save(file_path)
-    
-    # 返回相对路径，使用正斜杠
-    return 'avatars/' + file_name
+    return 'avatars/' + picture_fn

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ title }}</h1>
+    
+    <form method="POST" action="">
+        {{ form.csrf_token }}
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.name.label }}
+                    {{ form.name(class="form-control", placeholder="请输入姓名") }}
+                    {% if form.name.errors %}
+                    <div class="text-danger">
+                        {% for error in form.name.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.yida_id.label }}
+                    {{ form.yida_id(class="form-control", placeholder="请输入YIDA员工ID") }}
+                    {% if form.yida_id.errors %}
+                    <div class="text-danger">
+                        {% for error in form.yida_id.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.gid.label }}
+                    {{ form.gid(class="form-control", placeholder="请输入GID") }}
+                    {% if form.gid.errors %}
+                    <div class="text-danger">
+                        {% for error in form.gid.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.email.label }}
+                    {{ form.email(class="form-control", placeholder="请输入电子邮箱") }}
+                    {% if form.email.errors %}
+                    <div class="text-danger">
+                        {% for error in form.email.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.work_calendar.label }}
+                    {{ form.work_calendar(class="form-control", placeholder="") }}
+                    {% if form.work_calendar.errors %}
+                    <div class="text-danger">
+                        {% for error in form.work_calendar.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.department.label }}
+                    {{ form.department(class="form-control", placeholder="") }}
+                    {% if form.department.errors %}
+                    <div class="text-danger">
+                        {% for error in form.department.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.gender.label }}
+                    {{ form.gender(class="form-control", placeholder="请输入性别") }}
+                    {% if form.gender.errors %}
+                    <div class="text-danger">
+                        {% for error in form.gender.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.project.label }}
+                    {{ form.project(class="form-control", placeholder="请输入项目名称") }}
+                    {% if form.project.errors %}
+                    <div class="text-danger">
+                        {% for error in form.project.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.employee_type.label }}
+                    {{ form.employee_type(class="form-control", placeholder="请输入社员区分") }}
+                    {% if form.employee_type.errors %}
+                    <div class="text-danger">
+                        {% for error in form.employee_type.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.phone.label }}
+                    {{ form.phone(class="form-control", placeholder="请输入手机号码") }}
+                    {% if form.phone.errors %}
+                    <div class="text-danger">
+                        {% for error in form.phone.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group mt-3">
+            <a href="{{ url_for('main.employees') }}" class="btn btn-secondary">返回</a>
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .data-container {
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>员工统计</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">部门分布</h5>
+                </div>
+                <div class="card-body">
+                    <div class="data-container">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>部门</th>
+                                    <th>员工数量</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for label, value in zip(department_labels, department_values) %}
+                                <tr>
+                                    <td>{{ label }}</td>
+                                    <td>{{ value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">社员区分</h5>
+                </div>
+                <div class="card-body">
+                    <div class="data-container">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>类型</th>
+                                    <th>员工数量</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for label, value in zip(type_labels, type_values) %}
+                                <tr>
+                                    <td>{{ label }}</td>
+                                    <td>{{ value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">性别比例</h5>
+                </div>
+                <div class="card-body">
+                    <div class="data-container">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>性别</th>
+                                    <th>员工数量</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for label, value in zip(gender_labels, gender_values) %}
+                                <tr>
+                                    <td>{{ label }}</td>
+                                    <td>{{ value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">项目分布</h5>
+                </div>
+                <div class="card-body">
+                    <div class="data-container">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>项目</th>
+                                    <th>员工数量</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for label, value in zip(project_labels, project_values) %}
+                                <tr>
+                                    <td>{{ label }}</td>
+                                    <td>{{ value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mb-4">
+        <a href="{{ url_for('main.employees') }}" class="btn btn-primary">返回员工列表</a>
+        <a href="{{ url_for('main.export_employees') }}" class="btn btn-success">导出Excel</a>
+    </div>
+</div>
+{% endblock %}

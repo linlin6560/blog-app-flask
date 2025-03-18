@@ -1,52 +1,110 @@
 {% extends "base.html" %}
 
-{% block title %}AI 助手{% endblock %}
+{% block title %}AM Assignment POC{% endblock %}
 
 {% block styles %}
-<link href="{{ url_for('static', filename='css/chat.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/enrollment.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="chat-container">
-    <div class="chat-header">
-        <div class="message-avatar">
-            <i class="fas fa-robot"></i>
-        </div>
-        <div>
-            <h1 class="chat-header-title">AI 助手</h1>
-            <p class="chat-header-subtitle">随时为您提供智能帮助</p>
-        </div>
+<div class="enrollment-container">
+    <div class="page-header">
+        <h1>AM Assignment POC</h1>
     </div>
 
-    <div class="chat-messages" id="chat-messages">
-        <!-- AI欢迎消息 -->
-        <div class="message ai">
-            <div class="message-avatar">
-                <i class="fas fa-robot"></i>
+    <div class="main-content">
+        <!-- 左侧卖家信息区域 -->
+        <div class="seller-info-section">
+            <h2>卖家基本信息</h2>
+            <div class="info-card">
+                <div class="info-group">
+                    <label>卖家记号</label>
+                    <span id="seller-id"></span>
+                </div>
+                <div class="info-group">
+                    <label>签约账户店铺名称</label>
+                    <span id="store-name"></span>
+                </div>
+                <div class="info-group">
+                    <label>GMS tag</label>
+                    <span id="gms-tag"></span>
+                </div>
+                <div class="info-group">
+                    <label>Rejoin tag</label>
+                    <span id="rejoin-tag"></span>
+                </div>
+                <div class="info-group">
+                    <label>Primary Category</label>
+                    <span id="primary-category"></span>
+                </div>
+                <div class="info-group">
+                    <label>关键联系人</label>
+                    <span id="key-contact"></span>
+                </div>
+                <div class="info-group">
+                    <label>Leads/Opp Source</label>
+                    <span id="leads-source"></span>
+                </div>
+                <div class="info-group">
+                    <label>BD</label>
+                    <span id="bd-info"></span>
+                </div>
+                <div class="info-group">
+                    <label>AM Team</label>
+                    <span id="am-team"></span>
+                </div>
             </div>
-            <div class="message-content">
-                你好！我是你的AI助手，有什么我可以帮你的吗？
+
+            <h2>Onboarding Survey 信息</h2>
+            <div class="survey-info">
+                <div class="survey-group">
+                    <label>1. 公司开始经营亚马逊跨境电商年份</label>
+                    <span id="amazon-start-year"></span>
+                </div>
+                <!-- 其他 Survey 字段... -->
+                <div class="survey-group">
+                    <label>14. 公司主要产品</label>
+                    <span id="main-products"></span>
+                </div>
             </div>
         </div>
 
-        <!-- 打字指示器 -->
-        <div class="typing-indicator" style="display: none;">
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-        </div>
-    </div>
+        <!-- 右侧分配操作区域 -->
+        <div class="assignment-section">
+            <h2>分配操作</h2>
+            <div class="assignment-form">
+                <div class="form-group">
+                    <label>RPA分配结果</label>
+                    <div id="rpa-result" class="info-display"></div>
+                </div>
 
-    <div class="chat-input-container">
-        <div class="chat-input-wrapper">
-            <textarea class="chat-input" 
-                      id="chat-input"
-                      placeholder="输入你的问题..."
-                      rows="1"
-                      onInput="this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'"></textarea>
-            <button class="send-button" id="send-button">
-                <i class="fas fa-paper-plane"></i>
-            </button>
+                <div class="form-group">
+                    <label>Cross-team审批状态</label>
+                    <div id="cross-team-status" class="info-display"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>目标 Assignment POC</label>
+                    <select id="target-poc" class="form-control">
+                        <option value="">请选择目标POC</option>
+                    </select>
+                </div>
+
+                <button id="submit-assignment" class="btn-primary">确认分配</button>
+            </div>
+
+            <!-- 通知设置 -->
+            <div class="notification-settings">
+                <h3>通知方式</h3>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="notify-wecom" checked>
+                    <label for="notify-wecom">企业微信通知</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="notify-email" checked>
+                    <label for="notify-email">邮件通知</label>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -54,199 +112,75 @@
 
 {% block scripts %}
 <script>
-// 获取CSRF token
-const csrfToken = "{{ csrf_token() }}";
-
 document.addEventListener('DOMContentLoaded', function() {
-    const chatInput = document.getElementById('chat-input');
-    const sendButton = document.getElementById('send-button');
-    const chatMessages = document.getElementById('chat-messages');
-    // 发送消息函数 - 流式响应版本
-    async function sendMessage() {
-        const message = chatInput.value.trim();
-        if (!message) return;
-    
-        // 添加用户消息
-        appendMessage('user', message);
-        chatInput.value = '';
-        chatInput.style.height = 'auto';
-    
-        // 显示打字指示器
-        const typingIndicator = document.querySelector('.typing-indicator');
-        typingIndicator.style.display = 'flex';
-    
+    // 加载卖家数据
+    async function loadSellerData() {
         try {
-            // 创建AI消息元素，但内容为空
-            const aiMessageContent = appendMessageWithEmptyContent('ai');
-            
-            // 先显示思考中的状态
-            aiMessageContent.innerHTML = '<div class="thinking-status">思考中...</div>';
-            
-            // 创建EventSource连接 - 使用GET请求参数
-            const eventSource = new EventSource(`/stream_chat?message=${encodeURIComponent(message)}`);
-            
-            // 隐藏打字指示器
-            typingIndicator.style.display = 'none';
-            
-            // 准备接收回答
-            let fullResponse = '';
-            let thinkingResponse = '';
-            let finalResponse = '';
-            let isThinking = true;
-            
-            // 处理消息事件
-            eventSource.onmessage = function(event) {
-                if (event.data === "[DONE]") {
-                    eventSource.close();
-                    
-                    // 如果没有最终回答，则将思考过程作为最终回答
-                    if (!finalResponse && thinkingResponse) {
-                        finalResponse = thinkingResponse;
-                    }
-                    
-                    // 替换为思考过程和最终回答两部分
-                    aiMessageContent.innerHTML = `
-                        <div class="thinking-status">【深度思考】</div>
-                        <div class="partial-response">${thinkingResponse}</div>
-                        <div class="answer-title">【最终回答】</div>
-                        <div class="final-answer">${finalResponse}</div>
-                    `;
-                    scrollToBottom();
-                    return;
-                }
-                
-                try {
-                    const chunk = event.data;
-                    
-                    // 检测是否包含分隔符，表示从思考转为最终回答
-                    if (chunk.includes("【最终回答】")) {
-                        isThinking = false;
-                        const parts = chunk.split("【最终回答】");
-                        if (parts[0]) thinkingResponse += parts[0];
-                        if (parts[1]) finalResponse = parts[1];
-                    } else if (isThinking) {
-                        thinkingResponse += chunk;
-                    } else {
-                        finalResponse += chunk;
-                    }
-                    
-                    fullResponse += chunk;
-                    
-                    // 更新显示
-                    if (aiMessageContent.querySelector('.thinking-status')) {
-                        if (isThinking) {
-                            aiMessageContent.innerHTML = `
-                                <div class="thinking-status">【深度思考】</div>
-                                <div class="partial-response">${thinkingResponse}</div>
-                            `;
-                        } else {
-                            aiMessageContent.innerHTML = `
-                                <div class="thinking-status">【深度思考】</div>
-                                <div class="partial-response">${thinkingResponse}</div>
-                                <div class="answer-title">【最终回答】</div>
-                                <div class="final-answer">${finalResponse}</div>
-                            `;
-                        }
-                    }
-                    
-                    scrollToBottom();
-                } catch (e) {
-                    console.error("解析消息时出错:", e);
-                }
-            };
-            
-            // 处理错误
-            eventSource.onerror = function(event) {
-                console.error("EventSource错误:", event);
-                eventSource.close();
-                if (aiMessageContent.innerHTML.includes('思考中')) {
-                    aiMessageContent.innerHTML = "抱歉，获取回复时出错。";
-                }
-                scrollToBottom();
-            };
-            
+            const response = await fetch('/api/seller-data');
+            const data = await response.json();
+            updateSellerInfo(data);
         } catch (error) {
-            console.error('Error:', error);
-            const typingIndicator = document.querySelector('.typing-indicator');
-            typingIndicator.style.display = 'none';
-            appendMessage('ai', `抱歉，发生了错误：${error.message}`);
+            console.error('加载卖家数据失败:', error);
         }
     }
-    // 添加消息到聊天界面
-    function appendMessage(type, content) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${type}`;
-        
-        const avatar = document.createElement('div');
-        avatar.className = 'message-avatar';
-        const icon = document.createElement('i');
-        icon.className = type === 'user' ? 'fas fa-user' : 'fas fa-robot';
-        avatar.appendChild(icon);
-    
-        const messageContent = document.createElement('div');
-        messageContent.className = 'message-content';
-        messageContent.innerHTML = content;
-    
-        messageDiv.appendChild(avatar);
-        messageDiv.appendChild(messageContent);
-        
-        // 在打字指示器之前插入消息
-        const typingIndicator = document.querySelector('.typing-indicator');
-        chatMessages.insertBefore(messageDiv, typingIndicator);
-        
-        // 滚动到底部
-        scrollToBottom();
-        
-        return messageContent;
-    }
-    
-    // 添加消息但内容为空，返回内容元素以便后续填充
-    function appendMessageWithEmptyContent(type) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${type}`;
-        
-        const avatar = document.createElement('div');
-        avatar.className = 'message-avatar';
-        const icon = document.createElement('i');
-        icon.className = type === 'user' ? 'fas fa-user' : 'fas fa-robot';
-        avatar.appendChild(icon);
-    
-        const messageContent = document.createElement('div');
-        messageContent.className = 'message-content';
-    
-        messageDiv.appendChild(avatar);
-        messageDiv.appendChild(messageContent);
-        
-        // 在打字指示器之前插入消息
-        const typingIndicator = document.querySelector('.typing-indicator');
-        chatMessages.insertBefore(messageDiv, typingIndicator);
-        
-        // 滚动到底部
-        scrollToBottom();
-        
-        return messageContent;
-    }
-    
-    // 滚动到底部
-    function scrollToBottom() {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // 更新卖家信息显示
+    function updateSellerInfo(data) {
+        // 更新基本信息
+        document.getElementById('seller-id').textContent = data.sellerId;
+        document.getElementById('store-name').textContent = data.storeName;
+        // ... 更新其他字段
+
+        // 检查RPA规则和Cross-team审批状态
+        checkAssignmentRules(data);
     }
 
-    // 监听回车键发送消息
-    chatInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
+    // 检查分配规则
+    function checkAssignmentRules(data) {
+        const rpaResult = document.getElementById('rpa-result');
+        const crossTeamStatus = document.getElementById('cross-team-status');
+
+        // 根据AM Team和Cross-team审批状态确定分配建议
+        if (data.crossTeamApproval) {
+            rpaResult.textContent = `建议分配给 ${data.toTeam} 的Assignment POC`;
+        } else {
+            rpaResult.textContent = `建议分配给 ${data.amTeam} 的Assignment POC`;
+        }
+    }
+
+    // 提交分配
+    document.getElementById('submit-assignment').addEventListener('click', async function() {
+        const targetPoc = document.getElementById('target-poc').value;
+        const notifyWecom = document.getElementById('notify-wecom').checked;
+        const notifyEmail = document.getElementById('notify-email').checked;
+
+        try {
+            const response = await fetch('/api/assign-seller', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    targetPoc,
+                    notifications: {
+                        wecom: notifyWecom,
+                        email: notifyEmail
+                    }
+                })
+            });
+
+            if (response.ok) {
+                alert('分配成功！');
+            } else {
+                throw new Error('分配失败');
+            }
+        } catch (error) {
+            alert('操作失败：' + error.message);
         }
     });
 
-    // 点击发送按钮
-    sendButton.addEventListener('click', sendMessage);
-
-    // 自动聚焦输入框
-    window.onload = function() {
-        chatInput.focus();
-    };
+    // 初始加载数据
+    loadSellerData();
 });
 </script>
 {% endblock %}

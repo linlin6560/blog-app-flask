@@ -1,21 +1,28 @@
 services:
-  app:
+  web:
     build: .
+    restart: always
+    env_file:
+      - .env
     volumes:
-      - ./data:/app/data
-      - .:/app
-    environment:
-      - FLASK_ENV=production
-      - PYTHONPATH=/app
-    expose:
-      - 8000
-    command: bash -c "python -m flask run --host=0.0.0.0 --port=8000"  # 改用 flask run 命令调试
+      - ./app:/app/app
+      - ./instance:/app/instance
+    networks:
+      - enrollment-network
 
   nginx:
-    image: nginx:latest
+    image: nginx:1.25
+    restart: always
     ports:
-      - "8080:80"
+      - "8090:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./app/static:/app/app/static
     depends_on:
-      - app
+      - web
+    networks:
+      - enrollment-network
+
+networks:
+  enrollment-network:
+    driver: bridge

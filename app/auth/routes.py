@@ -8,33 +8,41 @@ from app.models.user import User
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.employees'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user is None or not user.check_password(form.password.data):
-            flash('邮箱或密码错误', 'danger')
-            return redirect(url_for('auth.login'))
-        login_user(user, remember=form.remember_me.data)
-        next_page = request.args.get('next')
-        if not next_page or not next_page.startswith('/'):
-            next_page = url_for('main.index')
-        return redirect(next_page)
+        # 管理员特殊处理
+        if form.username.data == 'admin' and form.password.data == '1':
+            # 查找或创建管理员用户
+            admin_user = User.query.filter_by(username='admin').first()
+            if not admin_user:
+                admin_user = User(username='admin')
+                admin_user.set_password('1')
+                db.session.add(admin_user)
+                db.session.commit()
+            login_user(admin_user)
+            return redirect(url_for('admin.dashboard'))
+        
+        # 普通用户处理
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            next_page = request.args.get('next')
+            if not next_page or not next_page.startswith('/'):
+                next_page = url_for('main.employees')
+            return redirect(next_page)
+        flash('用户名或密码错误', 'danger')
     return render_template('auth/login.html', title='登录', form=form)
-
-@auth.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('main.index'))
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.employees'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
+        # 修改这里，处理邮箱可能为空的情况
+        email = form.email.data if form.email.data else None
+        user = User(username=form.username.data, email=email)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -68,3 +76,11 @@ def profile():
         form.bio.data = current_user.bio
     
     return render_template('auth/profile.html', form=form)
+
+
+@auth.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('您已成功退出登录', 'success')
+    return redirect(url_for('auth.login'))

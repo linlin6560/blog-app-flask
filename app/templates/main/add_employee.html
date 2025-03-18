@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">{{ title }}</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="">
+                        {{ form.csrf_token }}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.name.label(class="form-label") }}
+                                    {{ form.name(class="form-control", placeholder="请输入姓名") }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.department.label(class="form-label") }}
+                                    {{ form.department(class="form-control", placeholder="请输入所属部门") }}
+                                    {% if form.department.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.department.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.yida_id.label(class="form-label") }}
+                                    {{ form.yida_id(class="form-control", placeholder="请输入YIDA员工ID") }}
+                                    {% if form.yida_id.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.yida_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.gender.label(class="form-label") }}
+                                    {{ form.gender(class="form-control") }}
+                                    {% if form.gender.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.gender.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.gid.label(class="form-label") }}
+                                    {{ form.gid(class="form-control", placeholder="请输入GID") }}
+                                    {% if form.gid.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.gid.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.project.label(class="form-label") }}
+                                    {{ form.project(class="form-control", placeholder="请输入项目名称") }}
+                                    {% if form.project.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.project.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control", placeholder="请输入电子邮箱") }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.email.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.employee_type.label(class="form-label") }}
+                                    {{ form.employee_type(class="form-control", placeholder="请输入社员区分") }}
+                                    {% if form.employee_type.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.employee_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.work_calendar.label(class="form-label") }}
+                                    {{ form.work_calendar(class="form-control", placeholder="请输入工作日历") }}
+                                    {% if form.work_calendar.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.work_calendar.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.phone.label(class="form-label") }}
+                                    {{ form.phone(class="form-control", placeholder="请输入联系电话") }}
+                                    {% if form.phone.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.phone.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex mt-4">
+                            <a href="{{ url_for('main.employees') }}" class="btn btn-secondary me-2">
+                                <i class="fas fa-arrow-left me-1"></i> 返回
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> 提交
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .card {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        padding: 1.25rem;
+    }
+    
+    .form-control {
+        border-radius: 5px;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e3e6f0;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #5a5c69;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1.5rem;
+        border-radius: 5px;
+        font-weight: 500;
+    }
+    
+    .btn-primary {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2e59d9;
+        border-color: #2653d4;
+    }
+    
+    .btn-secondary {
+        background-color: #858796;
+        border-color: #858796;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #717384;
+        border-color: #6b6d7d;
+    }
+    
+    .me-2 {
+        margin-right: 0.5rem;
+    }
+    
+    .me-1 {
+        margin-right: 0.25rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>员工详情</h1>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ employee.name }} - {{ employee.yida_id }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th style="width: 30%">员工编号</th>
+                            <td>{{ employee.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>姓名</th>
+                            <td>{{ employee.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>YIDA员工ID</th>
+                            <td>{{ employee.yida_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>GID</th>
+                            <td>{{ employee.gid }}</td>
+                        </tr>
+                        <tr>
+                            <th>电子邮箱</th>
+                            <td>{{ employee.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>工作日历</th>
+                            <td>{{ employee.work_calendar }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th style="width: 30%">所属部门</th>
+                            <td>{{ employee.department }}</td>
+                        </tr>
+                        <tr>
+                            <th>性别</th>
+                            <td>{{ employee.gender }}</td>
+                        </tr>
+                        <tr>
+                            <th>项目名称</th>
+                            <td>{{ employee.project }}</td>
+                        </tr>
+                        <tr>
+                            <th>社员区分</th>
+                            <td>{{ employee.employee_type }}</td>
+                        </tr>
+                        <tr>
+                            <th>联系电话</th>
+                            <td>{{ employee.phone }}</td>
+                        </tr>
+                        <tr>
+                            <th>创建时间</th>
+                            <td>{{ employee.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <a href="{{ url_for('main.employees') }}" class="btn btn-secondary">返回列表</a>
+            <a href="{{ url_for('main.edit_employee', id=employee.id) }}" class="btn btn-primary">编辑</a>
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal">
+                删除
+            </button>
+        </div>
+    </div>
+    
+    <!-- 删除确认模态框 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除员工 {{ employee.name }} 吗？此操作不可撤销。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <form action="{{ url_for('main.delete_employee', id=employee.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger">确认删除</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

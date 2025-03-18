@@ -4,63 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}博客{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <!-- 使用 CDN 加载 Bootstrap 4 (与 jQuery 和 Popper.js 兼容) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     {% block styles %}{% endblock %}
+    <!-- 添加自定义样式 -->
+    <style>
+        .card {
+            transition: none !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        .card:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        .bg-info {
+            transition: none !important;
+        }
+        .bg-info:hover {
+            transform: none !important;
+            filter: none !important;
+            opacity: 1 !important;
+        }
+        
+        /* 添加新的样式规则 */
+        .nav-link, 
+        .dropdown-toggle,
+        .dropdown-menu {
+            transition: none !important;
+            transform: none !important;
+            animation: none !important;
+        }
+        
+        .nav-link:hover,
+        .dropdown-toggle:hover,
+        .dropdown-menu:hover {
+            transform: none !important;
+            animation: none !important;
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .dropdown-menu.show {
+            animation: none !important;
+            transition: none !important;
+        }
+        
+        /* 添加登录按钮相关样式 */
+        .btn-primary,
+        .btn-primary:hover,
+        .btn-primary:active,
+        .btn-primary:focus {
+            transition: none !important;
+            transform: none !important;
+            animation: none !important;
+            box-shadow: none !important;
+            filter: none !important;
+        }
+        
+        /* 其他现有样式保持不变 */
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <!-- 在导航栏部分添加以下代码 -->
+    <!-- 修改导航栏的 Bootstrap 属性 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="fas fa-pen-fancy me-2"></i>博客
+            <a class="navbar-brand" href="{{ url_for('main.employees') }}">
+                <i class="fas fa-building"></i> Enrollment System
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}">
-                            <i class="fas fa-home me-1"></i>首页
-                        </a>
-                    </li>
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.create_post') }}">
-                            <i class="fas fa-edit me-1"></i>写文章
-                        </a>
-                    </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.employees') }}">
+                                <i class="fas fa-users"></i> 人员管理
+                            </a>
+                        </li>
+                        
+                        {% if current_user.has_role('from_team_assignment_poc') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.from_team_assignment') }}">
+                                <i class="fas fa-tasks"></i> From-team AM Assigment POC
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% if current_user.has_role('from_team_approve_poc') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.from_am_approval_poc') }}">
+                                <i class="fas fa-check-circle"></i> From-team AM Approval POC
+                            </a>
+                        </li>
+                        {% endif %}
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.chat') }}">
-                            <i class="fas fa-comments me-1"></i>AI 助手
-                        </a>
-                    </li>
                 </ul>
+                
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
+                    <!-- 修改用户下拉菜单的触发属性 -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ current_user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">个人资料</a></li>
-                            <li><a class="dropdown-item" href="#">我的文章</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">退出</a></li>
+                            <!-- 移除个人资料选项 -->
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">退出登录</a></li>
                         </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.login') }}">
-                            <i class="fas fa-sign-in-alt me-1"></i>登录
-                        </a>
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">登录</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.register') }}">
-                            <i class="fas fa-user-plus me-1"></i>注册
-                        </a>
+                        <a class="nav-link" href="{{ url_for('auth.register') }}">注册</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -72,9 +135,12 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
+        <!-- 修改警告框关闭按钮 -->
         <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
             {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
         {% endfor %}
         {% endif %}
@@ -85,11 +151,14 @@
 
     <footer class="bg-light py-4 mt-5">
         <div class="container text-center">
-            <p class="mb-0 text-muted">© 2025 博客应用 | 由 Flask 强力驱动</p>
+            <p class="mb-0 text-muted">© 2025 Enrollment System</p>
         </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <!-- 使用 CDN 加载 jQuery 和 Bootstrap 4 的 JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

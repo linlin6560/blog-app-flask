@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary mb-0">{{ title }}</h2>
+        <div class="btn-group">
+            <a href="{{ url_for('main.add_employee') }}" class="btn btn-success">
+                <i class="fas fa-user-plus mr-1"></i> 添加员工
+            </a>
+            <a href="{{ url_for('main.export_employees') }}" class="btn btn-info">
+                <i class="fas fa-file-export mr-1"></i> 导出Excel
+            </a>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#importModal">
+                <i class="fas fa-file-import mr-1"></i> 导入Excel
+            </button>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('main.employees') }}" class="mb-4">
+                <div class="row">
+                    <div class="col-md-10">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            </div>
+                            <input type="text" name="search" class="form-control" placeholder="搜索姓名、员工号、邮箱..." value="{{ search }}">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary btn-block" type="submit">搜索</button>
+                    </div>
+                </div>
+            </form>
+
+            <form id="batchForm" method="POST" action="{{ url_for('main.batch_delete_employees') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="border-0"><input type="checkbox" id="selectAll"></th>
+                                <th class="border-0">NO</th>
+                                <th class="border-0">姓名</th>
+                                <th class="border-0">YIDA员工ID</th>
+                                <th class="border-0">GID</th>
+                                <th class="border-0">メール</th>
+                                <th class="border-0">工作日历</th>
+                                <th class="border-0">部门</th>
+                                <th class="border-0">性别</th>
+                                <th class="border-0">项目名称</th>
+                                <th class="border-0">社员区分</th>
+                                <th class="border-0">电话</th>
+                                <th class="border-0">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employee in employees|sort(attribute='id') %}
+                            <tr>
+                                <td><input type="checkbox" name="employee_ids" value="{{ employee.id }}"></td>
+                                <td>{{ employee.id }}</td>
+                                <td>{{ employee.name }}</td>
+                                <td>{{ employee.yida_id }}</td>
+                                <td>{{ employee.gid }}</td>
+                                <td>{{ employee.email }}</td>
+                                <td>{{ employee.work_calendar }}</td>
+                                <td>{{ employee.department }}</td>
+                                <td>{{ employee.gender }}</td>
+                                <td>{{ employee.project }}</td>
+                                <td>{{ employee.employee_type }}</td>
+                                <td>{{ employee.phone }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('main.view_employee', id=employee.id) }}" class="btn btn-outline-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('main.edit_employee', id=employee.id) }}" class="btn btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" onclick="confirmDelete('{{ employee.id }}', '{{ employee.name }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="13" class="text-center text-muted py-4">暂无员工数据</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <button type="button" class="btn btn-danger" id="batchDeleteBtn" disabled>
+                        <i class="fas fa-trash-alt mr-1"></i> 批量删除
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 导入Excel模态框 -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">导入员工数据</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('main.import_employees') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {{ import_form.csrf_token }}
+                    <div class="form-group">
+                        {{ import_form.file.label }}
+                        {{ import_form.file(class="form-control-file") }}
+                        <small class="text-muted">请上传Excel文件(.xlsx或.xls格式)</small>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading mb-2">导入说明:</h6>
+                        <ul class="mb-0">
+                            <li>Excel文件必须包含所有必填字段</li>
+                            <li>如果包含ID列，将更新现有记录</li>
+                            <li>如果没有ID列或ID不存在，将创建新记录</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload mr-1"></i> 导入
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">确定要删除员工 <strong id="employeeName"></strong> 吗？此操作不可撤销。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt mr-1"></i> 确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+<style>
+.container-fluid {
+    max-width: 100%;
+    padding: 20px 30px;
+}
+
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.table {
+    width: 100%;
+    table-layout: fixed;
+    margin: 0;
+}
+
+.table th, .table td {
+    padding: 8px 4px;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    border-top: 1px solid #e3e6f0;
+}
+
+/* 调整列宽以确保一行显示 */
+.table th:nth-child(1), .table td:nth-child(1) { width: 25px; }   /* 复选框 */
+.table th:nth-child(2), .table td:nth-child(2) { width: 35px; }   /* NO */
+.table th:nth-child(3), .table td:nth-child(3) { width: 55px; }   /* 姓名 */
+.table th:nth-child(4), .table td:nth-child(4) { width: 85px; }   /* YIDA员工ID */
+.table th:nth-child(5), .table td:nth-child(5) { width: 85px; }   /* GID */
+.table th:nth-child(6), .table td:nth-child(6) { width: 150px; }  /* メール */
+.table th:nth-child(7), .table td:nth-child(7) { width: 70px; }   /* 工作日历 */
+.table th:nth-child(8), .table td:nth-child(8) { width: 70px; }   /* 部门 */
+.table th:nth-child(9), .table td:nth-child(9) { width: 40px; }   /* 性别 */
+.table th:nth-child(10), .table td:nth-child(10) { width: 70px; } /* 项目名称 */
+.table th:nth-child(11), .table td:nth-child(11) { width: 70px; } /* 社员区分 */
+.table th:nth-child(12), .table td:nth-child(12) { width: 110px; }/* 电话 */
+.table th:nth-child(13), .table td:nth-child(13) { width: 120px; }/* 操作 - 增加宽度 */
+
+/* 美化表头 */
+.table thead th {
+    background-color: #f8f9fc;
+    color: #4e73df;
+    font-weight: 600;
+    border-top: none;
+    border-bottom: 2px solid #e3e6f0;
+}
+
+/* 美化徽章 */
+.badge {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+.badge-info {
+    background-color: #36b9cc;
+}
+
+.badge-light {
+    background-color: #f8f9fa;
+    color: #5a5c69;
+    border: 1px solid #e3e6f0;
+}
+
+/* 美化操作按钮 */
+.btn-group-sm > .btn {
+    padding: 4px 8px;
+    margin: 0 3px;  /* 增加按钮间距 */
+    border-radius: 4px;
+}
+
+/* 确保表格响应式但不出现滚动条 */
+.table-responsive {
+    overflow: visible;
+}
+
+/* 交替行颜色 */
+.table-hover tbody tr:hover {
+    background-color: rgba(78, 115, 223, 0.05);
+}
+
+/* 美化搜索框 */
+.input-group .form-control {
+    border-radius: 4px;
+}
+
+.input-group-prepend .input-group-text {
+    background-color: #f8f9fc;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // 选择全部复选框功能
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('input[name="employee_ids"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBatchDeleteButton();
+    });
+
+    // 更新批量删除按钮状态
+    function updateBatchDeleteButton() {
+        const checkboxes = document.querySelectorAll('input[name="employee_ids"]:checked');
+        const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+        batchDeleteBtn.disabled = checkboxes.length === 0;
+    }
+
+    // 为所有员工复选框添加事件监听
+    document.querySelectorAll('input[name="employee_ids"]').forEach(checkbox => {
+        checkbox.addEventListener('change', updateBatchDeleteButton);
+    });
+
+    // 批量删除按钮点击事件
+    document.getElementById('batchDeleteBtn').addEventListener('click', function() {
+        if (confirm('确定要删除选中的员工吗？此操作不可撤销。')) {
+            document.getElementById('batchForm').submit();
+        }
+    });
+
+    // 单个删除确认
+    function confirmDelete(id, name) {
+        document.getElementById('employeeName').textContent = name;
+        document.getElementById('deleteForm').action = "{{ url_for('main.delete_employee', id=0) }}".replace('0', id);
+        $('#deleteModal').modal('show');
+    }
+</script>
+{% endblock %}
